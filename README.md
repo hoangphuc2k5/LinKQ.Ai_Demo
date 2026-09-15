@@ -32,6 +32,235 @@ Express routes -> Controllers -> DTOs -> Services -> Repositories -> SQL Server
 - `frontend/src/app/core/`: model và API client.
 - `frontend/src/app/features/`: các màn hình nghiệp vụ.
 
+### Sơ đồ lớp
+
+```mermaid
+classDiagram
+    direction TB
+
+    class AppComponent
+    class UploadComponent {
+      +analyze()
+      +confirmCandidate(customer)
+      +settlePaymentOrder(order)
+    }
+    class CustomersComponent {
+      +load()
+      +save()
+      +edit(customer)
+      +remove(customer)
+    }
+    class PaymentOrdersComponent {
+      +load()
+      +create()
+    }
+    class TransactionsComponent {
+      +load()
+    }
+    class ApiService {
+      +getCustomers()
+      +createCustomer(input)
+      +updateCustomer(id, input)
+      +deleteCustomer(id)
+      +getPaymentOrders(customerId)
+      +settlePaymentOrder(orderId, transactionId)
+      +analyzeImage(file)
+      +getTransactions()
+      +confirmTransactionCustomer(id, customerId)
+    }
+
+    class CustomerController {
+      +list()
+      +get()
+      +create()
+      +update()
+      +remove()
+    }
+    class PaymentOrderController {
+      +list()
+      +create()
+      +updateStatus()
+      +settle()
+    }
+    class TransactionController {
+      +analyze()
+      +list()
+      +get()
+      +confirm()
+    }
+
+    class ResourceIdDto {
+      +number id
+    }
+    class CustomerDto {
+      +string fullName
+      +string phone
+      +string email
+      +string bankAccountNumber
+      +string bankName
+      +string accountHolderName
+      +string note
+    }
+    class CreatePaymentOrderDto {
+      +number customerId
+      +string paymentCode
+      +number amount
+      +string currency
+      +string description
+      +dueDate
+    }
+    class ListPaymentOrdersDto {
+      +number customerId
+    }
+    class UpdatePaymentOrderStatusDto {
+      +string status
+    }
+    class SettlePaymentOrderDto {
+      +number transactionId
+    }
+    class AnalyzeTransactionDto {
+      +buffer
+      +string mimetype
+      +string originalname
+    }
+    class ConfirmTransactionCustomerDto {
+      +number transactionId
+      +number customerId
+    }
+
+    class CustomerService {
+      +list()
+      +get(id)
+      +create(input)
+      +update(id, input)
+      +remove(id)
+    }
+    class PaymentOrderService {
+      +list(customerId)
+      +create(input)
+      +updateStatus(id, status)
+      +settle(orderId, transactionId)
+    }
+    class TransactionService {
+      +analyze(file)
+      +list()
+      +get(id)
+      +confirm(id, customerId)
+    }
+    class GeminiService {
+      <<module>>
+      +extractPaymentInfo(buffer, mimeType)
+    }
+    class MatchService {
+      <<module>>
+      +matchCustomer(extracted)
+    }
+
+    class CustomerRepository {
+      +findAll()
+      +findById(id)
+      +create(input)
+      +update(id, input)
+      +delete(id)
+    }
+    class PaymentOrderRepository {
+      +findAll(customerId)
+      +create(input)
+      +updateStatus(id, status)
+      +settle(orderId, transactionId)
+    }
+    class TransactionRepository {
+      +create(data)
+      +findAll()
+      +findById(id)
+      +confirmCustomer(id, customerId)
+    }
+
+    class Customer {
+      +int CustomerId
+      +string FullName
+      +string BankAccountNumber
+    }
+    class PaymentOrder {
+      +int PaymentOrderId
+      +int CustomerId
+      +string PaymentCode
+      +number Amount
+      +string Status
+      +int PaidTransactionId
+    }
+    class Transaction {
+      +int TransactionId
+      +int MatchedCustomerId
+      +string MatchStatus
+      +string Status
+    }
+    class ExtractedPaymentInfo {
+      +string receiverAccountNumber
+      +number amount
+      +string content
+    }
+    class AnalyzeResponse {
+      +Transaction transaction
+      +ExtractedPaymentInfo extracted
+      +MatchCandidate[] matchCandidates
+    }
+    class MatchCandidate {
+      +Customer customer
+      +number confidence
+    }
+
+    AppComponent --> UploadComponent
+    AppComponent --> CustomersComponent
+    AppComponent --> PaymentOrdersComponent
+    AppComponent --> TransactionsComponent
+    UploadComponent --> ApiService
+    CustomersComponent --> ApiService
+    PaymentOrdersComponent --> ApiService
+    TransactionsComponent --> ApiService
+
+    ApiService --> CustomerController : HTTP
+    ApiService --> PaymentOrderController : HTTP
+    ApiService --> TransactionController : HTTP
+
+    CustomerController --> CustomerDto
+    CustomerController --> ResourceIdDto
+    CustomerController --> CustomerService
+    PaymentOrderController --> CreatePaymentOrderDto
+    PaymentOrderController --> ListPaymentOrdersDto
+    PaymentOrderController --> UpdatePaymentOrderStatusDto
+    PaymentOrderController --> SettlePaymentOrderDto
+    PaymentOrderController --> ResourceIdDto
+    PaymentOrderController --> PaymentOrderService
+    TransactionController --> AnalyzeTransactionDto
+    TransactionController --> ConfirmTransactionCustomerDto
+    TransactionController --> ResourceIdDto
+    TransactionController --> TransactionService
+
+    CustomerService --> CustomerRepository
+    PaymentOrderService --> PaymentOrderRepository
+    PaymentOrderService --> CustomerRepository
+    TransactionService --> TransactionRepository
+    TransactionService --> GeminiService
+    TransactionService --> MatchService
+
+    CustomerRepository --> Customer
+    PaymentOrderRepository --> PaymentOrder
+    TransactionRepository --> Transaction
+    GeminiService --> ExtractedPaymentInfo
+    MatchService --> MatchCandidate
+    MatchService --> Customer
+
+    Customer "1" --> "*" PaymentOrder
+    Customer "1" --> "*" Transaction : matched
+    PaymentOrder --> Transaction : settle
+    AnalyzeResponse --> Transaction
+    AnalyzeResponse --> ExtractedPaymentInfo
+    AnalyzeResponse --> MatchCandidate
+    MatchCandidate --> Customer
+    UploadComponent --> AnalyzeResponse
+```
+
 ## Yêu cầu môi trường
 
 - Node.js và npm.
