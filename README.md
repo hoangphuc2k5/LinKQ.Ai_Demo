@@ -57,6 +57,7 @@ project/
 │  │  ├─ repositories/
 │  │  ├─ routes/
 │  │  ├─ services/
+│  │  ├─ models/
 │  │  └─ server.js
 │  ├─ public/
 │  ├─ .env.example
