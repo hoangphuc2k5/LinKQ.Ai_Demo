@@ -1,266 +1,36 @@
 # Payment Matching AI
 
-Hệ thống quản lý khách hàng, giao dịch chuyển khoản và đơn thanh toán bằng AI, hoạt động trên Angular frontend + Express backend + PostgreSQL/Neon + Google Gemini.
+Ứng dụng Angular + Express.js + SQL Server + Gemini AI để đọc thông tin từ
+ảnh giao dịch chuyển khoản, đối chiếu khách hàng và quản lý đơn thanh toán.
 
-## Tổng quan
+## Tính năng
 
-Dự án cho phép:
+- Tải ảnh giao dịch và trích xuất thông tin bằng Gemini AI.
+- Lưu giao dịch vào SQL Server.
+- Đối chiếu khách hàng theo số tài khoản và độ tương đồng tên.
+- Quản lý khách hàng và thông tin tài khoản ngân hàng.
+- Tạo đơn thanh toán với mã thanh toán do người dùng nhập.
+- Tự động xác nhận đơn khi nội dung giao dịch chứa đúng mã thanh toán và số tiền giao dịch khớp số tiền đơn hàng.
+- Cho phép xác nhận khách hàng và gắn giao dịch vào đơn thủ công.
 
-- tải ảnh giao dịch chuyển khoản
-- trích xuất thông tin giao dịch bằng Gemini AI
-- đối chiếu giao dịch với khách hàng phù hợp theo số tài khoản và độ tương đồng tên
-- quản lý danh sách khách hàng và thông tin ngân hàng
-- tạo và theo dõi đơn thanh toán
-- xác nhận giao dịch đã khớp với đơn thanh toán
-- hiển thị dashboard nghiệp vụ trên giao diện Angular
-
-## Công nghệ sử dụng
-
-- Frontend: Angular 18
-- Backend: Node.js + Express
-- Database: PostgreSQL trên Neon
-- AI: Google Gemini
-- Upload: Multer
-- CORS và env config: dotenv, cors
-
-## Demo và repo
-
-- Frontend repo: https://github.com/hoangphuc2k5/LinKQ.Ai_Demo_Fontend
-- Backend repo: https://github.com/hoangphuc2k5/LinKQ.Ai_Demo_backend
-- Production frontend: https://demo-ai-theta.vercel.app
-- Production backend API: https://demo-ai-api.vercel.app/api
-
-## Kiến trúc hệ thống
+## Kiến trúc
 
 ```text
-Angular Frontend
-      |
-      v
-Express API Server
-      |
-      +--> Controllers
-      +--> Services
-      +--> Repositories
-      +--> PostgreSQL (Neon)
-      +--> Gemini AI
+Angular frontend
+        |
+        v
+Express routes -> Controllers -> DTOs -> Services -> Repositories -> SQL Server
+                                      |
+                                      +-> Gemini AI / Match Service
 ```
 
-### Cấu trúc thư mục chính
-
-```text
-project/
-├─ backend/
-│  ├─ src/
-│  │  ├─ config/
-│  │  ├─ controllers/
-│  │  ├─ dtos/
-│  │  ├─ repositories/
-│  │  ├─ routes/
-│  │  ├─ services/
-│  │  ├─ models/
-│  │  └─ server.js
-│  ├─ public/
-│  ├─ .env.example
-│  ├─ package.json
-│  └─ package-lock.json
-├─ frontend/
-│  ├─ src/
-│  ├─ angular.json
-│  ├─ package.json
-│  └─ tsconfig*.json
-├─ README.md
-└─ .gitignore
-```
-
-## Tính năng chính
-
-- Quản lý khách hàng: thêm, sửa, xóa, xem danh sách
-- Quản lý giao dịch: upload ảnh, trích xuất nội dung, gắn khách hàng phù hợp
-- Quản lý thanh toán: tạo đơn, cập nhật trạng thái, đối soát với giao dịch thực tế
-- Tự động khớp: dựa trên số tài khoản, tên khách hàng, nội dung giao dịch và mã thanh toán
-- Hệ thống REST API rõ ràng cho frontend và quản trị
-
-## Yêu cầu môi trường
-
-- Node.js 18+
-- npm hoặc pnpm
-- Một database PostgreSQL trên Neon
-- Một API key Google Gemini
-
-## Cài đặt local
-
-### 1) Clone dự án
-
-```bash
-git clone https://github.com/hoangphuc2k5/LinKQ.Ai_Demo_backend.git backend
-git clone https://github.com/hoangphuc2k5/LinKQ.Ai_Demo_Fontend.git frontend
-```
-
-Nếu bạn đang làm việc trong workspace local hiện tại, bạn chỉ cần mở folder `backend` và `frontend` như 2 project riêng.
-
-### 2) Cài đặt dependency backend
-
-```bash
-cd backend
-npm install
-```
-
-### 3) Cấu hình biến môi trường backend
-
-Tạo file `.env` dựa trên `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Nội dung tham khảo:
-
-```env
-PORT=3000
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.0-flash
-DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
-MATCH_THRESHOLD=70
-```
-
-Hoặc nếu bạn dùng cấu hình từng biến riêng:
-
-```env
-DB_USER=your_neon_user
-DB_PASSWORD=your_neon_password
-DB_SERVER=your_neon_host
-DB_NAME=neondb
-DB_PORT=5432
-DB_ENCRYPT=true
-DB_TRUST_SERVER_CERTIFICATE=false
-```
-
-> Lưu ý: file `.env` không nên commit lên Git; hãy giữ riêng trên máy local. File `.env.example` dùng để làm template.
-
-### 4) Khởi động backend
-
-```bash
-npm run dev
-```
-
-Backend sẽ chạy tại:
-
-```text
-http://localhost:3000
-```
-
-Kiểm tra sức khỏe API:
-
-```bash
-curl http://localhost:3000/api/health
-```
-
-### 5) Cài đặt và chạy frontend
-
-```bash
-cd ../frontend
-npm install
-npm start
-```
-
-Frontend thường chạy tại:
-
-```text
-http://localhost:4200
-```
-
-## API chính
-
-### Health check
-
-- GET /api/health
-
-### Customers
-
-- GET /api/customers
-- POST /api/customers
-- PUT /api/customers/:id
-- DELETE /api/customers/:id
-
-### Transactions
-
-- GET /api/transactions
-- POST /api/transactions/analyze
-- PUT /api/transactions/:id/confirm
-
-### Payment orders
-
-- GET /api/payment-orders
-- POST /api/payment-orders
-- PATCH /api/payment-orders/:id/status
-- POST /api/payment-orders/:id/settle
-
-## Database
-
-Dự án hiện sử dụng Neon PostgreSQL và tự tạo schema khi khởi động nếu chưa tồn tại. Các bảng chính bao gồm:
-
-- Customers
-- Transactions
-- PaymentOrders
-
-Cấu hình connect đang ưu tiên đọc `DATABASE_URL`, nếu không có thì sẽ build từ các biến `DB_USER`, `DB_PASSWORD`, `DB_SERVER`, `DB_PORT`, `DB_NAME`.
-
-## Quy tắc an toàn
-
-- Không commit file `.env` lên repository
-- Chỉ dùng `.env.example` làm template để chia sẻ cấu hình
-- Nếu database hoặc API key đã bị lộ, hãy đổi ngay khóa tương ứng trên nền tảng tương ứng
-
-## Deploy
-
-### Frontend (Vercel)
-
-- Build Angular app với `ng build`
-- Publish thư mục `dist` cho project Angular
-- Có thể dùng Vercel với project `frontend`
-
-### Backend (Vercel)
-
-- Dùng Node.js server trong project `backend`
-- Cấu hình biến môi trường trên Vercel: `DATABASE_URL`, `GEMINI_API_KEY`, `PORT`
-- Dùng `npm start` hoặc chạy server trên runtime Node
-
-## Kịch bản nghiệp vụ
-
-1. Người dùng nhập khách hàng vào hệ thống.
-2. Upload ảnh giao dịch chuyển khoản.
-3. Backend gửi ảnh tới Gemini để trích xuất thông tin như số tài khoản, số tiền, nội dung giao dịch.
-4. Hệ thống đối chiếu với danh sách khách hàng.
-5. Người dùng xác nhận khách hàng phù hợp.
-6. Tạo đơn thanh toán hoặc đối soát với giao dịch đã xác nhận.
-7. Hệ thống cập nhật trạng thái thanh toán.
-
-## Lưu ý phát triển
-
-- Nếu bạn thấy lỗi tương tự `pool.request is not a function`, hãy kiểm tra rằng backend đang dùng `pg` chứ không phải `mssql`.
-- Nếu frontend không gọi được backend, hãy kiểm tra `API_BASE` trong file `frontend/src/app/core/services/api.service.ts`.
-- Nếu database không kết nối, hãy kiểm tra `DATABASE_URL` hoặc các biến `DB_*` trên môi trường.
-
-## License
-
-Dự án này sử dụng cho mục đích demo và phát triển nội bộ.
-
-## Liên hệ
-
-Nếu cần hỗ trợ xây dựng, mở rộng tính năng hoặc sửa lỗi production, bạn có thể liên hệ với người phát triển của dự án.
-
-    MatchService --> MatchCandidate
-    MatchService --> Customer
-
-    Customer "1" --> "*" PaymentOrder
-    Customer "1" --> "*" Transaction : matched
-    PaymentOrder --> Transaction : settle
-    AnalyzeResponse --> Transaction
-    AnalyzeResponse --> ExtractedPaymentInfo
-    AnalyzeResponse --> MatchCandidate
-    MatchCandidate --> Customer
-    UploadComponent --> AnalyzeResponse
-```
+- `backend/src/routes/`: khai báo endpoint.
+- `backend/src/controllers/`: nhận HTTP request và trả HTTP response.
+- `backend/src/dtos/`: chuẩn hóa dữ liệu giữa Controller và Service.
+- `backend/src/services/`: xử lý nghiệp vụ, validation và gọi dịch vụ ngoài.
+- `backend/src/repositories/`: truy vấn SQL Server.
+- `frontend/src/app/core/`: model và API client.
+- `frontend/src/app/features/`: các màn hình nghiệp vụ.
 
 ## Yêu cầu môi trường
 
