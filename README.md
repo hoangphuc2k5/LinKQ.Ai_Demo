@@ -1,11 +1,11 @@
 # Payment Matching AI
 
 Ứng dụng Angular + Express.js + SQL Server + Gemini AI để đọc thông tin từ
-ảnh giao dịch chuyển khoản, đối chiếu khách hàng và quản lý đơn thanh toán.
+tài liệu giao dịch chuyển khoản, đối chiếu khách hàng và quản lý đơn thanh toán.
 
 ## Tính năng
 
-- Tải ảnh giao dịch và trích xuất thông tin bằng Gemini AI.
+- Tải tài liệu giao dịch và chuyển đổi sang Markdown bằng MarkItDown TS trước khi phân tích bằng Gemini AI.
 - Lưu giao dịch vào SQL Server.
 - Đối chiếu khách hàng theo số tài khoản và độ tương đồng tên.
 - Quản lý khách hàng và thông tin tài khoản ngân hàng.
@@ -21,13 +21,15 @@ Angular frontend
         v
 Express routes -> Controllers -> DTOs -> Services -> Repositories -> SQL Server
                                       |
-                                      +-> Gemini AI / Match Service
+                                      +-> Document Adapter -> MarkItDown TS -> Markdown -> Gemini AI
+                                      +-> Match Service
 ```
 
 - `backend/src/routes/`: khai báo endpoint.
 - `backend/src/controllers/`: nhận HTTP request và trả HTTP response.
 - `backend/src/dtos/`: chuẩn hóa dữ liệu giữa Controller và Service.
 - `backend/src/services/`: xử lý nghiệp vụ, validation và gọi dịch vụ ngoài.
+- `backend/src/adapters/documentAdapter.js`: interface chuyển file upload thành Markdown; hiện dùng `markitdown-ts`.
 - `backend/src/repositories/`: truy vấn SQL Server.
 - `frontend/src/app/core/`: model và API client.
 - `frontend/src/app/features/`: các màn hình nghiệp vụ.
@@ -37,6 +39,7 @@ Express routes -> Controllers -> DTOs -> Services -> Repositories -> SQL Server
 - Node.js và npm.
 - SQL Server đang chạy.
 - Gemini API key.
+- Node.js 20 trở lên (bắt buộc bởi backend và MarkItDown TS).
 
 ## Cấu hình database
 
@@ -124,7 +127,7 @@ npm run build
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
-| `POST` | `/api/transactions/analyze` | Upload ảnh với field `file`, gọi Gemini, đối chiếu và lưu giao dịch |
+| `POST` | `/api/transactions/analyze` | Upload tài liệu với field `file`, chuyển sang Markdown, gọi Gemini, đối chiếu và lưu giao dịch |
 | `GET` | `/api/transactions` | Lấy danh sách giao dịch |
 | `GET` | `/api/transactions/:id` | Lấy chi tiết giao dịch |
 | `PUT` | `/api/transactions/:id/confirm` | Xác nhận khách hàng với body `{ "customerId": 1 }` |
@@ -176,8 +179,15 @@ Prompt và phần gửi ảnh tới Gemini nằm trong:
 
 `backend/src/services/geminiService.js`
 
-Gemini được yêu cầu trả về JSON gồm ngân hàng, tài khoản, số tiền, mã giao
-dịch, ngày giao dịch và nội dung chuyển khoản.
+Trước khi gọi Gemini, `documentAdapter.js` dùng `markitdown-ts` để chuyển buffer
+upload thành Markdown. Gemini chỉ nhận nội dung Markdown và được yêu cầu trả về
+JSON gồm ngân hàng, tài khoản, số tiền, mã giao dịch, ngày giao dịch và nội dung
+chuyển khoản. MarkItDown TS hỗ trợ PDF, DOCX, XLSX, PPTX, HTML, CSV, text, ảnh và ZIP.
+Adapter bổ sung giải nén RAR, 7z, TAR và các archive nén phổ biến bằng `libarchive.js`,
+sau đó chuyển từng file bên trong sang Markdown trước khi gửi cho AI.
+Với ảnh, adapter giữ nguyên binary và gửi ảnh trực tiếp cho Gemini; ảnh không bị
+chuyển đổi sang Markdown. Các tài liệu văn bản vẫn được chuyển sang Markdown trước
+khi phân tích.
 
 Có thể tạo Gemini API key tại:
 
